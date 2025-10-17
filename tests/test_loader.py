@@ -40,3 +40,15 @@ def test_load_numeric_series_positive_constraint(tmp_path: Path):
 
     with pytest.raises(ValueError):
         load_numeric_series(csv_path, column="value")
+
+
+def test_load_numeric_series_positional_column_skips_header(tmp_path: Path):
+    csv_path = tmp_path / "data.csv"
+    write_csv(
+        csv_path,
+        ["value", "note"],
+        [["1", "a"], ["2", "b"], ["4", "c"]],
+    )
+
+    series = load_numeric_series(csv_path, column=0)
+    assert series == (1.0, 2.0, 4.0)
