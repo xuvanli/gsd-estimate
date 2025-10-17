@@ -45,12 +45,24 @@ def _read_named_column(reader: csv.DictReader, column: str | None) -> Iterator[f
 
 
 def _read_positional_column(reader: Iterable[Sequence[str]], column_index: int) -> Iterator[float]:
-    for row in reader:
+    for row_index, row in enumerate(reader):
         try:
             value = row[column_index]
         except IndexError as exc:
             raise ColumnNotFoundError(f"column index {column_index} exceeds row width") from exc
-        yield _parse_positive_float(value)
+
+        try:
+            yield _parse_positive_float(value)
+        except ValueError:
+            # When using positional access the first row may still represent a
+            # header.  If the value cannot be parsed as a positive float we
+            # treat it as such and continue consuming the remaining rows.
+            if row_index == 0:
+                try:
+                    float(value)
+                except ValueError:
+                    continue
+            raise
 
 
 def _parse_positive_float(value: str) -> float:
